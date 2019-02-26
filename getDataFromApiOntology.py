@@ -7,7 +7,7 @@ import dateutil.parser
 
 ### Live database ###
 login = 'storeconnect'
-password = 'MBWJcx4gKMebaJ2F'
+password = '************'
 
 endpointQuery = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon/Query'
 endpointUpdate = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon/Update'
