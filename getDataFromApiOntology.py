@@ -16,7 +16,7 @@ endpointUpdate = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon
 ### Local database ###
 
 login = 'postgres'
-password = 'postgres'
+password = '********'
 
 endpointQuery = 'http://vps603380.ovh.net:8080/strabon/Query'
 #endpointUpdate = 'http://localhost:8890/strabon/Update'
