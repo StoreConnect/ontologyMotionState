@@ -10,6 +10,7 @@ class Point3D(object):
         self.y= 0
         self.z= 0
         self.timestamp= datetime.datetime.now()
+        self.state= "Stopping"
 
     def distanceTo(self, p):
         return math.sqrt(
@@ -23,6 +24,8 @@ class GPSPoint(object):
         self.lat= 0
         self.long= 0
         self.timestamp= datetime.datetime.now()
+        self.deltaT= 0
+        self.state= "Stopping"
 
     def distanceTo(self, p):
         dLat= (self.lat * math.pi / 180) - (p.lat * math.pi / 180)
