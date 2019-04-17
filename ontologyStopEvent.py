@@ -1,8 +1,7 @@
-import getDataFromApiOntology
 from Point import GPSPoint
 import math
-import matplotlib.pyplot as plt
 import sendDataToApiOntology
+import datetime
 
 s= 0.5
 speedAccuracy= 0.1
@@ -35,14 +34,28 @@ def ontologyPorcessing(dataDict, store):
 
     print "Ontology processing..."
 
+    fusedTraj = {}
+
     for object in dataDict:
+        fusedTraj[object] = {}
+        fusedTraj[object]["trajectory"] = []
+        fusedTraj[object]["sensor"] = dataDict[object]["sensor"]
         points= []
+        #reduction de l'echantillonnage
+        first_point= dataDict[object]["trajectory"][0]
+        point = GPSPoint();
+        point.long = first_point[1][0]
+        point.lat = first_point[1][1]
+        point.timestamp = first_point[0]
+        points.append(point)
         for p in dataDict[object]["trajectory"]:
-            point = GPSPoint();
-            point.long = p[1][0]
-            point.lat = p[1][1]
-            point.timestamp= p[0]
-            points.append(point)
+            if (p[0] - first_point[0]) >= datetime.timedelta(seconds=1):
+                point = GPSPoint()
+                point.long = p[1][0]
+                point.lat = p[1][1]
+                point.timestamp= p[0]
+                points.append(point)
+                first_point = p
 
         # points lisses
         mPoints = []
@@ -55,7 +68,9 @@ def ontologyPorcessing(dataDict, store):
         i = 0
         for point in points:
             # Lissage des points et acquisition des distances et deltaT
+            fusedTraj[object]["trajectory"].append([])
             index = points.index(point)
+            coordinates = []
             if (index + 1 < len(points)):
 
                 pAfter = points[index + 1]
@@ -73,8 +88,12 @@ def ontologyPorcessing(dataDict, store):
                     pBefore = points[index - 1]
 
                     medianePoint = mediane(pBefore, point, pAfter)
-                    mPoints.append(medianePoint)
 
+                    fusedTraj[object]["trajectory"][index].append(medianePoint.timestamp)
+
+                    mPoints.append(medianePoint)
+                    coordinates.append(medianePoint.long)
+                    coordinates.append(medianePoint.lat)
                     mIndex = mPoints.index(medianePoint)
                     mBefore = mPoints[mIndex - 1]
                     deltaD = mBefore.distanceTo(medianePoint)
@@ -83,11 +102,20 @@ def ontologyPorcessing(dataDict, store):
                     medianePoint.deltaT = (medianePoint.timestamp - pBefore.timestamp).total_seconds()
                     temps.append(medianePoint.deltaT)
                 else:
+                    coordinates.append(point.long)
+                    coordinates.append(point.lat)
                     mPoints.append(point)
                     distance.append(0)
                     temps.append(0)
+                    fusedTraj[object]["trajectory"][index].append(point.timestamp)
+
+                fusedTraj[object]["trajectory"][index].append(coordinates)
 
             else:
+                coordinates.append(point.long)
+                coordinates.append(point.lat)
+                fusedTraj[object]["trajectory"][index].append(point.timestamp)
+                fusedTraj[object]["trajectory"][index].append(coordinates)
                 mPoints.append(point)
                 distance.append(0)
                 temps.append(0)
@@ -119,8 +147,8 @@ def ontologyPorcessing(dataDict, store):
             else:
                 degrees = 0
                 percent = 0
-            dataDict[object]["trajectory"][i].append(degrees)
-            dataDict[object]["trajectory"][i].append(percent)
+            fusedTraj[object]["trajectory"][i].append(degrees)
+            fusedTraj[object]["trajectory"][i].append(percent)
             i += 1
 
         # lissage des distances
@@ -168,14 +196,13 @@ def ontologyPorcessing(dataDict, store):
             else:
                 medianeVitesse = v
                 mVitesse.append(v)
-            dataDict[object]["trajectory"][i].append(medianeVitesse)
-            #print dataDict[object]["trajectory"][i]
+            fusedTraj[object]["trajectory"][i].append(medianeVitesse)
 
             if medianeVitesse <= s:
                 moveState = "Stopping"
             else:
                 moveState = "Walking"
-            dataDict[object]["trajectory"][i].append(moveState)
+            fusedTraj[object]["trajectory"][i].append(moveState)
             #print dataDict[object]["trajectory"][i]
 
             # calcul du pourcentage de la speedAccuracy de la vitesse
@@ -184,7 +211,7 @@ def ontologyPorcessing(dataDict, store):
                 percent = speedAccuracy / dist
             else:
                 percent = 1.0
-            dataDict[object]["trajectory"][i].append(percent)
+            fusedTraj[object]["trajectory"][i].append(percent)
             i += 1
 
-    sendDataToApiOntology.sendData(dataDict, store)
+    sendDataToApiOntology.sendData(fusedTraj, store)

@@ -14,6 +14,7 @@ def getData(date, startTime, endTime) :
     url += fil
     
     #myResponse = requests.get(url,auth=HTTPDigestAuth(raw_input("username: "), raw_input("Password: ")), verify=True)
+    print url
     myResponse = requests.get(url)
     
     hasNext = True
@@ -49,13 +50,12 @@ def getData(date, startTime, endTime) :
         else:
           # If response code is not ok (200), print the resulting http error code with description
             myResponse.raise_for_status()
-            
 
     return dataDict
 
 def main():
     dataDict = getData()
-    return data
+    return dataDict
     
 
 if __name__ == "__main__":

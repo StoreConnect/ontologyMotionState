@@ -7,6 +7,9 @@ from fastdtw import fastdtw
 from math import radians, cos, sin, asin, sqrt
 import sys
 
+distanceSeuil = 10
+tempsSeuilLissage= 1
+
 def interpolate_polyline(polyline, num_points):
     duplicates = []
     for i in range(1, len(polyline)):
@@ -85,58 +88,24 @@ def trajectoryDistance(traj1, traj2) :
 
 def main(args):
     
-    #dataDict = {}
-    
-    #dataDict["ID1"] = {}
-    #dataDict["ID1"]["sensor"] = "NoSensor1"
-    #dataDict["ID1"]["trajectory"] = []
-    
-    #dataDict["ID1"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 0, 0), [-1, 0] ])                
-    #dataDict["ID1"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 1, 0), [0, 0] ])
-    #dataDict["ID1"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 2, 0), [1, 0] ])
-    #dataDict["ID1"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 3, 0), [2, 0] ])
-    
-    #dataDict["ID2"] = {}
-    #dataDict["ID2"]["sensor"] = "NoSensor2"
-    #dataDict["ID2"]["trajectory"] = []
-    
-    #dataDict["ID2"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 1, 100000), [0.5, 0] ])
-    #dataDict["ID2"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 2, 100000), [1.5, 0] ])
-    #dataDict["ID2"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 3, 100000), [2.5, 0] ])
-    #dataDict["ID2"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 4, 100000), [3.5, 0] ])
-    
-    #dataDict["ID3"] = {}
-    #dataDict["ID3"]["sensor"] = "NoSensor3"
-    #dataDict["ID3"]["trajectory"] = []
-    
-    #dataDict["ID3"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 1, 200000), [0.75, 0] ])
-    #dataDict["ID3"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 2, 200000), [1.75, 0] ])
-    #dataDict["ID3"]["trajectory"].append( [datetime.datetime(2012, 1, 1, 14, 0, 3, 200000), [2.75, 0] ])
-    
     dataDict = getDataFromApiSensors.getData(args[2], args[3], args[4])
     
     fusionList = []
-    
+
     for dk in dataDict.keys() :
         dataDict[dk+"LISSAGE"] = dataDict.pop(dk)
+        #dataDict[dk+"LISSAGE"] = dataDict[dk]
 
-    for id1 in dataDict.keys() :
-        for id2 in dataDict.keys() :
-            if id1!=id2 and dataDict[id1]["trajectory"][0][0] <= dataDict[id2]["trajectory"][0][0] : 
-                
-                #print id1,id2,dataDict[id1]["trajectory"][0][0], dataDict[id1]["trajectory"][-1][0], dataDict[id2]["trajectory"][0][0],  dataDict[id2]["trajectory"][-1][0]
-                
-                #print dataDict[id1]["trajectory"]
-                
-                #if len(dataDict[id1]["trajectory"]) < 5 or len(dataDict[id2]["trajectory"]) < 5:
-                #    continue
-                
-                #print "sensor", dataDict[id1]["sensor"], dataDict[id2]["sensor"]
-                
+    #for dk in dataDict.keys():
+        #print dk
+
+    for id1 in dataDict.keys():
+        for id2 in dataDict.keys():
+            if id1!=id2 and dataDict[id1]["trajectory"][0][0] <= dataDict[id2]["trajectory"][0][0]:
                 if dataDict[id1]["sensor"] == dataDict[id2]["sensor"] or \
                    ( "geolys" in dataDict[id1]["sensor"] and "geolys" in dataDict[id2]["sensor"] ) or \
                    dataDict[id1]["trajectory"][-1][0] < dataDict[id2]["trajectory"][0][0] or \
-                   dataDict[id2]["trajectory"][-1][0] < dataDict[id1]["trajectory"][0][0] :
+                   dataDict[id2]["trajectory"][-1][0] < dataDict[id1]["trajectory"][0][0]:
                     continue
 
                 print id1, id2
@@ -176,10 +145,11 @@ def main(args):
                 #distance, path = fastdtw(npCoord1, npCoord2, dist=euclidean)
                 
                 distance = distance/len(path)
+                print distance
 
                 #print distance, path
                 
-                if len(path) >=0 and distance < 10 :
+                if len(path) >=0 and distance < distanceSeuil :
                     fusionList.append([distance,id1,id2])
     
     fusionList=sorted(fusionList)
@@ -219,8 +189,10 @@ def main(args):
 
         fusionCluster.append(list(first))
         toBeFused = rest
-    
+
+    #print "plop"
     print(fusionCluster)
+    #print "plop2"
     
     for fc in fusionCluster :
         for idTraj in fc[1:] :
@@ -228,27 +200,29 @@ def main(args):
             #dataDict[fc[0]]["sensor"] = dataDict[fc[0]]["sensor"] + " " + dataDict[idTraj]["sensor"]
             dataDict.pop(idTraj)
     
-    fusedTraj = {}
-    
+    #fusedTraj = {}
+
+    '''
     for traj in dataDict :
         fusedTraj[traj] = {}
         fusedTraj[traj]["trajectory"]  = []
         fusedTraj[traj]["sensor"] = dataDict[traj]["sensor"]
         lastPoint = dataDict[traj]["trajectory"][0]
-        for point in dataDict[traj]["trajectory"] :
-            if point[0] - lastPoint[0] > datetime.timedelta(seconds=1):
+        for point in dataDict[traj]["trajectory"]:
+            if point[0] - lastPoint[0] > datetime.timedelta(seconds=tempsSeuilLissage):
                 meanPoint = lastPoint
-                for p in range(dataDict[traj]["trajectory"].index(lastPoint)+1, dataDict[traj]["trajectory"].index(point)+1) :
-                    meanPoint[1][0] += (dataDict[traj]["trajectory"][p][1][0]- lastPoint[1][0])* (dataDict[traj]["trajectory"][p][0] - dataDict[traj]["trajectory"][p-1][0]).total_seconds()
+                for p in range(dataDict[traj]["trajectory"].index(lastPoint)+1, dataDict[traj]["trajectory"].index(point)+1):
+                    meanPoint[1][0] += (dataDict[traj]["trajectory"][p][1][0] - lastPoint[1][0])* (dataDict[traj]["trajectory"][p][0] - dataDict[traj]["trajectory"][p-1][0]).total_seconds()
                     meanPoint[1][1] += (dataDict[traj]["trajectory"][p][1][1]- lastPoint[1][1])* (dataDict[traj]["trajectory"][p][0] - dataDict[traj]["trajectory"][p-1][0]).total_seconds()
-                meanPoint[0] = point[0] + (point[0]-lastPoint[0])/2 
+                meanPoint[0] = point[0] + (point[0]-lastPoint[0])/2
                 fusedTraj[traj]["trajectory"].append(meanPoint)
                 lastPoint = point
-    
+    '''
+
     response = raw_input("SEND TO API? (y/n)")
     
     if response == "y" :
-        ontologyStopEvent.ontologyPorcessing(fusedTraj, args[1])
+        ontologyStopEvent.ontologyPorcessing(dataDict, args[1])
         #sendDataToApiOntology.sendData(fusedTraj)
     
 

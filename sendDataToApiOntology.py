@@ -8,7 +8,7 @@ import time
 ### Live database ###
 
 login = 'storeconnect'
-password = '**************' #changeit
+password = '************' #changeit
 
 endpointQuery = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon/Query'
 endpointUpdate = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon/Update'
@@ -61,7 +61,7 @@ def deleteObject(idObj) :
     
     result = servicePost.query(query)
 
-def sendStore(store) :
+def sendStore(store):
 
     query = queryHeaders + """
     INSERT DATA {{
@@ -69,8 +69,9 @@ def sendStore(store) :
             rdfs:label "Tests in {store} Location" .
     }}
     """.format(store=store)
-    
-    result = servicePost.query(query)
+
+    servicePost.query(query)
+    #print query
 
 def sendCameraSensor(idCam) :
     
@@ -134,7 +135,7 @@ def sendData(dataDict, store) :
         
         for point in dataDict[idObject]["trajectory"]:
 
-            #print point
+            print point
             
             query += """
             <Observation/{observationid}> rdf:type sosa:Observation ;
@@ -160,6 +161,7 @@ def sendData(dataDict, store) :
                     sc:hasLocation [
                         rdf:type sc:Location ;
                         sc:floor "0"^^xsd:float ;
+                        sc:building "1"^^xsd:float;
                         sc:hasPoint [
                             rdf:type geo:Point ;
                             geo:asWKT "POINT({pointLon} {pointLat})"^^geo:wktLiteral
@@ -168,7 +170,7 @@ def sendData(dataDict, store) :
                 ];
                 sosa:resultTime [
                     rdf:type time:Instant ;
-                    time:inXSDDateTimeStamp "2019-03-20T14:00:00+00:00"^^xsd:dateTimeStamp 
+                    time:inXSDDateTimeStamp "{timestamp}"^^xsd:dateTimeStamp 
                 ] .
             """.format(observationid=str(idObject)+"_"+str(counter),
                        motionState= point[5],
@@ -181,6 +183,9 @@ def sendData(dataDict, store) :
                        pointLon=point[1][0] ,
                        pointLat=point[1][1] ,
                        timestamp=point[0].strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")  ) #%z UTC offset
+
+            print point[0]
+            print point[0].strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
             
             counter += 1
         
@@ -189,6 +194,7 @@ def sendData(dataDict, store) :
         """
 
         #result = servicePost.query(query,100) # timeout 10 seconds
+        #print query
         servicePost.query(query, 100)  # timeout 10 seconds
         print "Data sent correctly !"
 
