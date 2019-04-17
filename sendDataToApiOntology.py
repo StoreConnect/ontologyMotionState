@@ -8,7 +8,7 @@ import time
 ### Live database ###
 
 login = 'storeconnect'
-password = '************' #changeit
+password = '*************' #changeit
 
 endpointQuery = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon/Query'
 endpointUpdate = 'http://apiontologie.westeurope.cloudapp.azure.com:8890/strabon/Update'

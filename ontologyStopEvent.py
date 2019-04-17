@@ -36,6 +36,23 @@ def ontologyPorcessing(dataDict, store):
 
     fusedTraj = {}
 
+
+    '''
+    longTab= []
+    latTab= []
+    iTab = []
+
+    for object in dataDict:
+        iTab= range(0, len(dataDict[object]["trajectory"]))
+        for p in dataDict[object]["trajectory"]:
+            longTab.append(p[1][0])
+            latTab.append(p[1][1])
+        break
+
+    plt.plot(latTab, longTab)
+    #plt.show()
+    '''
+
     for object in dataDict:
         fusedTraj[object] = {}
         fusedTraj[object]["trajectory"] = []
@@ -213,5 +230,19 @@ def ontologyPorcessing(dataDict, store):
                 percent = 1.0
             fusedTraj[object]["trajectory"][i].append(percent)
             i += 1
+
+    '''
+    longTab2= []
+    latTab2= []
+    for object in fusedTraj:
+        for p in fusedTraj[object]["trajectory"]:
+            longTab2.append(p[1][0])#+0.000001001)
+            latTab2.append(p[1][1])#+0.000001001)
+        iTab2= range(0, len(fusedTraj[object]["trajectory"]))
+        break
+
+    plt.plot(latTab2, longTab2)
+    #plt.show()
+    '''
 
     sendDataToApiOntology.sendData(fusedTraj, store)

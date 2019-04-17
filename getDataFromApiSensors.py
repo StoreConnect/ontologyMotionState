@@ -9,7 +9,7 @@ dataDict = {}
 def getData(date, startTime, endTime) :
     
     url = "http://apicapteur.westeurope.cloudapp.azure.com:8080/SensorThingsService/v1.0/Observations"
-    fil = "?$filter=phenomenonTime ge "+date+"T"+startTime+":00.000Z and phenomenonTime le "+date+"T"+endTime+":00.000Z"
+    fil = "?$top=5000000&$filter=phenomenonTime ge "+date+"T"+startTime+":00.000Z and phenomenonTime le "+date+"T"+endTime+":00.000Z&$orderBy=phenomenonTime"
     #2018-06-20T08:41:00.000Z and phenomenonTime le 2018-06-20T08:44:00.000Z "
     url += fil
     
